@@ -13,7 +13,7 @@ module.exports = app;
 
 // returns the current config container
 function config (req) {
-  return req.webtaskContext || process.env;
+  return (req.webtaskContext && req.webtaskContext.secrets) || process.env;
 }
 
 // middleware that ensures the array of query parameter names are present in the request
