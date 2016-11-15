@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const server = require('./server');
+const server = require('./src/server');
 // config just returns contents of process.env
 const config = (key) => process.env[key];
 const app = server(config);
