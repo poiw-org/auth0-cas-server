@@ -7,19 +7,26 @@ const cookieParser = require('cookie-parser');
 const request = require('request');
 const jwt = require('jsonwebtoken');
 const sessions = require('client-sessions');
+const stringify = require('node-stringify');
+const url = require('url');
 
-const app = new Express();
-module.exports = app;
+function buildUrl (req, path) {
+  const originalUrl = url.parse(req.originalUrl || '').pathname || '';
+  const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
 
-// returns the current config container
-function config (req) {
-  return (req.webtaskContext && req.webtaskContext.secrets) || process.env;
+  return url.format({
+    protocol: isSecure ? 'https' : 'http',
+    host: req.get('host'),
+    pathname: originalUrl.replace(req.path, path)
+  });
 }
 
 // middleware that ensures the array of query parameter names are present in the request
 function requireParams (params) {
   return (req, res, next) => {
-    for (var param of params) {
+    for (var i = 0; i < params.length; i++) {
+      const param = params[i];
+
       if (!req.query[param])
         return res.status(400).send(`Missing required parameter: ${param}`);
     }
@@ -28,13 +35,13 @@ function requireParams (params) {
   };
 }
 
-function getApiV2AccessToken (req, done) {
+function getApiV2AccessToken (config, done) {
   request.post({
-    url: `https://${config(req).AUTH0_DOMAIN}/oauth/token`,
+    url: `https://${config('AUTH0_DOMAIN')}/oauth/token`,
     json: {
-      client_id: config(req).API_V2_CLIENT_ID,
-      client_secret: config(req).API_V2_CLIENT_SECRET,
-      audience: `https://${config(req).AUTH0_DOMAIN}/api/v2/`,
+      client_id: config('API_V2_CLIENT_ID'),
+      client_secret: config('API_V2_CLIENT_SECRET'),
+      audience: `https://${config('AUTH0_DOMAIN')}/api/v2/`,
       grant_type: 'client_credentials'
     }
   }, (err, response, body) => {
@@ -48,7 +55,7 @@ function getApiV2AccessToken (req, done) {
 
 var _services;
 // middleware that sets a req.service object (based on the 'service' query param) which contains Auth0 information about the CAS service
-function getService () {
+function getService (config) {
   const setService = (req, res, next) => {
     req.service = _services[req.query.service];
     if (!req.service) return res.status(400).send(`Unrecognized service: ${req.query.service}`);
@@ -59,21 +66,23 @@ function getService () {
   return (req, res, next) => {
     if (_services) return setService(req, res, next);
 
-    getApiV2AccessToken(req, (err, accessToken) => {
+    getApiV2AccessToken(config, (err, accessToken) => {
       // fetch clients from Auth0 that are configured as CAS services
       request.get({
-        url: `https://${config(req).AUTH0_DOMAIN}/api/v2/clients`,
+        url: `https://${config('AUTH0_DOMAIN')}/api/v2/clients`,
         json: true,
         headers: { Authorization: `Bearer ${accessToken}` }
       }, (err, response, clients) => {
         if (err) return next(err);
         if (response.statusCode !== 200)
-          return next(new Error(`Could not fetch Auth0 clients. status=${response.statusCode}, body=` + JSON.stringify(clients)));
+          return next(new Error(`Could not fetch Auth0 clients. status=${response.statusCode}, body=` + stringify(clients)));
 
         _services = {};
         const webApps = clients
           .filter(c => c.app_type === 'regular_web' && c.client_metadata && c.client_metadata.cas_service);
-        for (var webApp of webApps) {
+        for (var i = 0; i < webApps.length; i++) {
+          const webApp = webApps[i];
+
           _services[webApp.client_metadata.cas_service] = {
             client_id: webApp.client_id,
             client_secret: webApp.client_secret
@@ -88,23 +97,23 @@ function getService () {
   };
 }
 
-app.use((req, res, next) => {
-  const router = new Express.Router();
+module.exports = (config) => {
+  const app = new Express();
 
-  router.use(cookieParser());
-  router.use(morgan('dev'));
+  app.use(cookieParser());
+  app.use(morgan('dev'));
 
   // configure encrypted session
-  router.use(sessions({
+  app.use(sessions({
     cookieName: 'cas-session',
     requestKey: 'session',
-    secret: config(req).SESSION_SECRET,
+    secret: config('SESSION_SECRET'),
     duration: 24 * 60 * 60 * 1000,
     activeDuration: 1000 * 60 * 5
   }));
 
   // CAS login endpoint
-  router.get('/login', requireParams(['service']), getService(), (req, res) => {
+  app.get('/login', requireParams(['service']), getService(config), (req, res) => {
     // generate session
     req.session.ticket = uuid.v4();
     req.session.serviceUrl = req.query.service;
@@ -114,15 +123,15 @@ app.use((req, res, next) => {
       client_id: req.service.client_id,
       response_type: 'code',
       scope: 'openid profile',
-      redirect_uri: config(req).AUTH0_REDIRECT_URI,
-      connection: config(req).AUTH0_CONNECTION,
+      redirect_uri: buildUrl(req, '/callback'),
+      connection: config('AUTH0_CONNECTION'),
       state: req.session.ticket
     });
-    res.redirect(`https://${config(req).AUTH0_DOMAIN}/authorize?${query}`);
+    res.redirect(`https://${config('AUTH0_DOMAIN')}/authorize?${query}`);
   });
 
   // Auth0 Authorization Code Flow callback endpoint
-  router.get('/callback', requireParams(['code', 'state']), (req, res) => {
+  app.get('/callback', requireParams(['code', 'state']), (req, res) => {
     // validate session
     if (req.session.ticket !== req.query.state) return res.status(400).send(`Invalid session`);
 
@@ -133,19 +142,19 @@ app.use((req, res, next) => {
   });
 
   // CAS validate endpoint
-  router.get('/p3/serviceValidate', requireParams(['service', 'ticket']), getService(), (req, res) => {
+  app.get('/p3/serviceValidate', requireParams(['service', 'ticket']), getService(config), (req, res) => {
     // validate ticket
     if (req.session.ticket !== req.query.ticket) return res.status(400).send(`Invalid ticket`);
 
     // perform OAuth2 code/token exchange with Auth0
     request.post({
-      url: `https://${config(req).AUTH0_DOMAIN}/oauth/token`,
+      url: `https://${config('AUTH0_DOMAIN')}/oauth/token`,
       json: {
         code: req.session.code,
         client_id: req.service.client_id,
         client_secret: req.service.client_secret,
         grant_type: 'authorization_code',
-        redirect_uri: config(req).AUTH0_REDIRECT_URI
+        redirect_uri: buildUrl(req, '/callback')
       }
     }, (err, response, body) => {
       if (err) throw err;
@@ -162,6 +171,5 @@ app.use((req, res, next) => {
     });
   });
 
-  app.use('/', router);
-  next();
-});
+  return app;
+};

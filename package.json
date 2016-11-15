@@ -32,5 +32,8 @@
     "on-headers": "^1.0.1",
     "querystring": "^0.2.0",
     "request": "^2.76.0"
+  },
+  "devDependencies": {
+    "auth0-extension-express-tools": "^0.9.0"
   }
 }

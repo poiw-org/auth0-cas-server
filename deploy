@@ -1,0 +1,27 @@
+#!/bin/bash
+
+set -o pipefail
+set -e
+
+# bundle
+echo "Bundling..."
+bundleFile=./build/bundle.js
+echo "'use strict';" > $bundleFile
+wt-bundle webtask.js >> $bundleFile
+
+# export values from local .env
+source <(sed -E -n 's/[^#]+/export &/ p' ./.env)
+
+# deploy
+profile=$1
+echo "Deploying webtask using profile '$profile'..."
+wt create $bundleFile \
+  -n cas_server \
+  -s AUTH0_DOMAIN="$AUTH0_DOMAIN" \
+  -s API_V2_CLIENT_ID="$API_V2_CLIENT_ID" \
+  -s API_V2_CLIENT_SECRET="$API_V2_CLIENT_SECRET" \
+  -s AUTH0_CONNECTION="$AUTH0_CONNECTION" \
+  -s SESSION_SECRET="$SESSION_SECRET" \
+  -p $profile
+
+echo "Deploy complete!"
