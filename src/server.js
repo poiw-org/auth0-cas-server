@@ -1,13 +1,11 @@
 const Express = require('express');
 const morgan = require('morgan');
-const querystring = require('querystring');
-const uuid = require('node-uuid');
 const cookieParser = require('cookie-parser');
-const jwt = require('jsonwebtoken');
 const sessions = require('client-sessions');
 
-const util = require('./util');
+const auth0 = require('./auth0');
 const middleware = require('./middleware');
+const cas = require('./cas');
 
 module.exports = (config) => {
   const app = new Express();
@@ -24,63 +22,26 @@ module.exports = (config) => {
     activeDuration: 1000 * 60 * 5
   }));
 
-  // CAS login endpoint
-  app.get('/login', middleware.requireParams(['service']), middleware.getService(config), (req, res) => {
-    // generate session
-    req.session.ticket = uuid.v4();
-    req.session.serviceUrl = req.query.service;
+  // load CAS services
+  auth0.getCasServices(config, (err, services) => {
+    if (err)
+      throw err;
 
-    // perform OIDC Authorizaation Code Flow with Auth0
-    const query = querystring.stringify({
-      client_id: req.service.client_id,
-      response_type: 'code',
-      scope: 'openid profile',
-      redirect_uri: util.buildUrl(req, '/callback'),
-      connection: config('AUTH0_CONNECTION'),
-      state: req.session.ticket
-    });
-    res.redirect(`https://${config('AUTH0_DOMAIN')}/authorize?${query}`);
-  });
+    // CAS server endpoints
 
-  // Auth0 Authorization Code Flow callback endpoint
-  app.get('/callback', middleware.requireParams(['code', 'state']), (req, res) => {
-    // validate session
-    if (req.session.ticket !== req.query.state) return res.status(400).send(`Invalid session`);
+    app.get('/login',
+      middleware.requireParams(['service']),
+      middleware.getService(services),
+      cas.login(config));
 
-    // store code in session
-    req.session.code = req.query.code;
+    app.get('/callback',
+      middleware.requireParams(['code', 'state']),
+      cas.auth0Callback(config));
 
-    res.redirect(`${req.session.serviceUrl}?ticket=${req.session.ticket}`);
-  });
-
-  // CAS validate endpoint
-  app.get('/p3/serviceValidate', middleware.requireParams(['service', 'ticket']), middleware.getService(config), (req, res) => {
-    // validate ticket
-    if (req.session.ticket !== req.query.ticket) return res.status(400).send(`Invalid ticket`);
-
-    // perform OAuth2 code/token exchange with Auth0
-    request.post({
-      url: `https://${config('AUTH0_DOMAIN')}/oauth/token`,
-      json: {
-        code: req.session.code,
-        client_id: req.service.client_id,
-        client_secret: req.service.client_secret,
-        grant_type: 'authorization_code',
-        redirect_uri: util.buildUrl(req, '/callback')
-      }
-    }, (err, response, body) => {
-      if (err) throw err;
-      if (response.statusCode != 200) return res.status(400).send(`IDP returned a non-successful response: ${body}`);
-
-      //TODO: replace with RS256 verification
-
-      // validate the id_token and return its payload in CAS format
-      jwt.verify(body.id_token, new Buffer(req.service.client_secret, 'base64'), (err, payload) => {
-        if (err) throw err;
-
-        res.send(payload);
-      });
-    });
+    app.get('/p3/serviceValidate',
+      middleware.requireParams(['service', 'ticket']),
+      middleware.getService(services),
+      cas.validate(config));
   });
 
   return app;
