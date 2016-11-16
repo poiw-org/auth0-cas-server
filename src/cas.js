@@ -20,7 +20,7 @@ function buildUrl (req, path) {
 exports.login = (config) =>
   (req, res) => {
     // generate session
-    req.session.ticket = uuid.v4();
+    req.session.state = uuid.v4();
     req.session.serviceUrl = req.query.service;
 
     // perform OIDC Authorizaation Code Flow with Auth0
@@ -30,7 +30,7 @@ exports.login = (config) =>
       scope: 'openid profile',
       redirect_uri: buildUrl(req, '/callback'),
       connection: config('AUTH0_CONNECTION'),
-      state: req.session.ticket
+      state: req.session.state
     });
     res.redirect(`https://${config('AUTH0_DOMAIN')}/authorize?${query}`);
   };
@@ -52,12 +52,13 @@ exports.validate = (config) =>
       if (err) throw err;
       if (response.statusCode != 200) return res.status(400).send(`IDP returned a non-successful response: ${stringify(body)}`);
 
-      //TODO: replace with RS256 verification
+      //TODO: support both HS256 and RS256 verification
 
       // validate the id_token and return its payload in CAS format
       jwt.verify(body.id_token, new Buffer(req.service.client_secret, 'base64'), (err, payload) => {
         if (err) throw err;
 
+        //TODO: format payload as CAS XML
         res.send(payload);
       });
     });

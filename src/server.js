@@ -39,7 +39,7 @@ module.exports = (config) => {
     middleware.requireParams(['code', 'state']),
     (req, res) => {
       // validate session
-      if (req.session.ticket !== req.query.state)
+      if (req.session.state !== req.query.state)
         return res.status(400).send(`Invalid session`);
 
       // redirect to service, using Auth0 authorization code as CAS ticket
