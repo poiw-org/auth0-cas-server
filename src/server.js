@@ -28,14 +28,23 @@ module.exports = (config) => {
     middleware.getService(config),
     cas.login(config));
 
-  app.get('/callback',
-    middleware.requireParams(['code', 'state']),
-    cas.auth0Callback(config));
-
   app.get('/p3/serviceValidate',
     middleware.requireParams(['service', 'ticket']),
     middleware.getService(config),
     cas.validate(config));
+
+  // Auth0 callback
+
+  app.get('/callback',
+    middleware.requireParams(['code', 'state']),
+    (req, res) => {
+      // validate session
+      if (req.session.ticket !== req.query.state)
+        return res.status(400).send(`Invalid session`);
+
+      // redirect to service, using Auth0 authorization code as CAS ticket
+      res.redirect(`${req.session.serviceUrl}?ticket=${req.query.code}`);
+    });
 
   return app;
 };

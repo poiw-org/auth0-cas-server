@@ -35,17 +35,6 @@ exports.login = (config) =>
     res.redirect(`https://${config('AUTH0_DOMAIN')}/authorize?${query}`);
   };
 
-// Auth0 Authorization Code Flow callback endpoint
-exports.auth0Callback = () =>
-  (req, res) => {
-    // validate session
-    if (req.session.ticket !== req.query.state)
-      return res.status(400).send(`Invalid session`);
-
-    // use Auth0 authorization code as ticket
-    res.redirect(`${req.session.serviceUrl}?ticket=${req.query.code}`);
-  };
-
 // CAS validate endpoint
 exports.validate = (config) =>
   (req, res) => {
