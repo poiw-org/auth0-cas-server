@@ -22,6 +22,7 @@ wt create $bundleFile \
   -s API_V2_CLIENT_SECRET="$API_V2_CLIENT_SECRET" \
   -s AUTH0_CONNECTION="$AUTH0_CONNECTION" \
   -s SESSION_SECRET="$SESSION_SECRET" \
+  -s CAS_USERNAME_FIELD="$CAS_USERNAME_FIELD" \
   -p $profile
 
 echo "Deploy complete!"

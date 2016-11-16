@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const url = require('url');
 const request = require('request');
 const stringify = require('node-stringify');
+const xmlbuilder = require('xmlbuilder');
 
 const auth0 = require('./auth0');
 
@@ -63,8 +64,35 @@ exports.validate = (config) =>
         jwt.verify(body.id_token, idTokenSecret, { audience: req.service.client_id }, (err, payload) => {
           if (err) throw err;
 
-          //TODO: format payload as CAS XML
-          res.send(payload);
+          // remove claims we don't want in the response
+          delete payload.identities;
+
+          // build response
+          const response = {
+            serviceResponse: {
+              authenticationSuccess: {
+                user: payload[config('CAS_USERNAME_FIELD')],
+                attributes: payload
+              }
+            }
+          };
+
+          // send XML unless JSON was requested
+          res.format({
+            xml: () => {
+              const xml = xmlbuilder.create(response, {
+                stringify: {
+                  eleName: (name) => 'cas:' + name
+                }
+              });
+              xml.att('xmlns:cas', 'http://www.yale.edu/tp/cas');
+              
+              res.send(xml.end({ pretty: true }));
+            },
+            json: () => {
+              res.json(response);
+            }
+          });
         });
       });
     });
