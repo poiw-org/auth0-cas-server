@@ -1,5 +1,7 @@
 const request = require('request');
 const stringify = require('node-stringify');
+const jwt = require('jsonwebtoken');
+const jwksClient = require('jwks-rsa');
 
 var services;
 
@@ -54,4 +56,33 @@ exports.getCasServices = (config, done) => {
       done(null, services);
     });
   });
+};
+
+var idTokenSecrets = {}
+
+exports.getIdTokenSecret = (config, service, idToken, done) => {
+  // check to see if secret is already in cache
+  if (idTokenSecrets[service.client_id])
+    return done(null, idTokenSecrets[service.client_id]);
+
+  const decoded = jwt.decode(idToken, { complete: true });
+  switch (decoded.header.alg) {
+    case 'HS256':
+      console.log(`Caching id_token HS256 validation secret for client_id: ${service.client_id}`);
+
+      idTokenSecrets[service.client_id] = new Buffer(service.client_secret, 'base64');
+      return done(null, idTokenSecrets[service.client_id]);
+    case 'RS256':
+      console.log(`Caching id_token RS256 validation public key for client_id: ${service.client_id}`);
+
+      const client = jwksClient({ jwksUri: `https://${config('AUTH0_DOMAIN')}/.well-known/jwks.json` });
+      return client.getSigningKey(decoded.header.kid, (err, key) => {
+        if (err) return done(err);
+
+        idTokenSecrets[service.client_id] = key.publicKey || key.rsaPublicKey;
+        return done(null, idTokenSecrets[service.client_id]);
+      });
+    default:
+      return done(new Error(`Unsupported id_token signing algorithm: ${decoded.header.alg}`));
+  }
 };

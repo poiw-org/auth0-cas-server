@@ -5,6 +5,8 @@ const url = require('url');
 const request = require('request');
 const stringify = require('node-stringify');
 
+const auth0 = require('./auth0');
+
 function buildUrl (req, path) {
   const originalUrl = url.parse(req.originalUrl || '').pathname || '';
   const isSecure = req.secure || req.headers['x-forwarded-proto'] === 'https';
@@ -50,16 +52,20 @@ exports.validate = (config) =>
       }
     }, (err, response, body) => {
       if (err) throw err;
-      if (response.statusCode != 200) return res.status(400).send(`IDP returned a non-successful response: ${stringify(body)}`);
+      if (response.statusCode != 200)
+        return res.status(400).send(`IDP returned a non-successful response: ${stringify(body)}`);
 
-      //TODO: support both HS256 and RS256 verification
-
-      // validate the id_token and return its payload in CAS format
-      jwt.verify(body.id_token, new Buffer(req.service.client_secret, 'base64'), (err, payload) => {
+      // get secret used to validate the id_token
+      auth0.getIdTokenSecret(config, req.service, body.id_token, (err, idTokenSecret) => {
         if (err) throw err;
 
-        //TODO: format payload as CAS XML
-        res.send(payload);
+        // validate the id_token and return its payload in CAS format
+        jwt.verify(body.id_token, idTokenSecret, { audience: req.service.client_id }, (err, payload) => {
+          if (err) throw err;
+
+          //TODO: format payload as CAS XML
+          res.send(payload);
+        });
       });
     });
   };
