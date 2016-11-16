@@ -1,6 +1,6 @@
 # Auth0 CAS Server
 
-A simple CAS server that uses Auth0 as the backing IDP
+A simple [CAS](https://en.m.wikipedia.org/wiki/Central_Authentication_Service) server that uses Auth0 as the backing IDP.
 
 ## Auth0 Setup
 
