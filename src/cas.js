@@ -5,6 +5,7 @@ const url = require('url');
 const request = require('request');
 const stringify = require('node-stringify');
 const xmlbuilder = require('xmlbuilder');
+const moment = require('moment');
 
 const auth0 = require('./auth0');
 
@@ -110,8 +111,14 @@ exports.validate = (config) =>
           if (err)
             return sendError(err);
 
+          // generate authenticationDate
+          payload.authenticationDate = moment.unix(payload.iat).utc().format();
+
           // remove claims we don't want in the response
-          delete payload.identities;
+          ['identities', 'iss', 'sub', 'aud', 'exp', 'iat']
+            .forEach(claim => {
+              delete payload[claim];
+            });
 
           // send success response
           sendServiceResponse(200, {
