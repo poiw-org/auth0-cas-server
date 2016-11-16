@@ -1,7 +1,12 @@
 const request = require('request');
 const stringify = require('node-stringify');
 
+var services;
+
 exports.getCasServices = (config, done) => {
+  if (services)
+    return done(null, services);
+
   // get API V2 access_token
   request.post({
     url: `https://${config('AUTH0_DOMAIN')}/oauth/token`,
@@ -33,7 +38,7 @@ exports.getCasServices = (config, done) => {
       if (webApps.length === 0)
         return done(new Error(`No clients representing CAS Services could be found in Auth0 tenant ${config('AUTH0_DOMAIN')}.`));
 
-      const services = {};
+      services = {};
       for (var i = 0; i < webApps.length; i++) {
         const webApp = webApps[i];
 

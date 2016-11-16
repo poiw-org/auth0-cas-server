@@ -3,7 +3,6 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const sessions = require('client-sessions');
 
-const auth0 = require('./auth0');
 const middleware = require('./middleware');
 const cas = require('./cas');
 
@@ -22,27 +21,21 @@ module.exports = (config) => {
     activeDuration: 1000 * 60 * 5
   }));
 
-  // load CAS services
-  auth0.getCasServices(config, (err, services) => {
-    if (err)
-      throw err;
+  // CAS server endpoints
 
-    // CAS server endpoints
+  app.get('/login',
+    middleware.requireParams(['service']),
+    middleware.getService(config),
+    cas.login(config));
 
-    app.get('/login',
-      middleware.requireParams(['service']),
-      middleware.getService(services),
-      cas.login(config));
+  app.get('/callback',
+    middleware.requireParams(['code', 'state']),
+    cas.auth0Callback(config));
 
-    app.get('/callback',
-      middleware.requireParams(['code', 'state']),
-      cas.auth0Callback(config));
-
-    app.get('/p3/serviceValidate',
-      middleware.requireParams(['service', 'ticket']),
-      middleware.getService(services),
-      cas.validate(config));
-  });
+  app.get('/p3/serviceValidate',
+    middleware.requireParams(['service', 'ticket']),
+    middleware.getService(config),
+    cas.validate(config));
 
   return app;
 };
