@@ -10,7 +10,12 @@ echo "'use strict';" > $bundleFile
 wt-bundle webtask.js >> $bundleFile
 
 # export values from local .env
-source <(sed -E -n 's/[^#]+/export &/ p' ./.env)
+dotenv () {
+  set -a
+  [ -f .env ] && . .env
+  set +a
+}
+dotenv
 
 # deploy
 profile=$1
