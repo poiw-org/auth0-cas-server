@@ -42,23 +42,18 @@ exports.auth0Callback = () =>
     if (req.session.ticket !== req.query.state)
       return res.status(400).send(`Invalid session`);
 
-    // store code in session
-    req.session.code = req.query.code;
-
-    res.redirect(`${req.session.serviceUrl}?ticket=${req.session.ticket}`);
+    // use Auth0 authorization code as ticket
+    res.redirect(`${req.session.serviceUrl}?ticket=${req.query.code}`);
   };
 
 // CAS validate endpoint
 exports.validate = (config) =>
   (req, res) => {
-    // validate ticket
-    if (req.session.ticket !== req.query.ticket) return res.status(400).send(`Invalid ticket`);
-
-    // perform OAuth2 code/token exchange with Auth0
+    // perform OAuth2 code/token exchange with Auth0, using ticket as code
     request.post({
       url: `https://${config('AUTH0_DOMAIN')}/oauth/token`,
       json: {
-        code: req.session.code,
+        code: req.query.ticket,
         client_id: req.service.client_id,
         client_secret: req.service.client_secret,
         grant_type: 'authorization_code',
