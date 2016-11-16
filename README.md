@@ -108,6 +108,7 @@ AUTH0_DOMAIN=your-tenant.auth0.com
 API_V2_CLIENT_ID=non-interactive-client-client_id
 API_V2_CLIENT_SECRET=non-interactive-client-client_secret
 AUTH0_CONNECTION=connection-name
+AUTH0_SCOPES="openid profile"
 SECURE_COOKIE=false
 SESSION_SECRET=a-hard-to-guess-secret
 CAS_USERNAME_FIELD=auth0-user-profile-field-like-email

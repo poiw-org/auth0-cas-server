@@ -30,7 +30,7 @@ exports.login = (config) =>
     const query = querystring.stringify({
       client_id: req.service.client_id,
       response_type: 'code',
-      scope: 'openid profile',
+      scope: config('AUTH0_SCOPES'),
       redirect_uri: buildUrl(req, '/callback'),
       connection: config('AUTH0_CONNECTION'),
       state: req.session.state
