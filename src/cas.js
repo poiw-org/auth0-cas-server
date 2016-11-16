@@ -41,6 +41,49 @@ exports.login = (config) =>
 // CAS validate endpoint
 exports.validate = (config) =>
   (req, res) => {
+    // response helper functions
+    function sendServiceResponse (status, body) {
+      res.status(status);
+
+      const response = {
+        serviceResponse: body
+      };
+
+      // send XML unless JSON was requested
+      res.format({
+        xml: () => {
+          const xml = xmlbuilder.create(response, {
+            stringify: {
+              eleName: (name) => 'cas:' + name
+            }
+          });
+          xml.att('xmlns:cas', 'http://www.yale.edu/tp/cas');
+
+          res.send(xml.end({ pretty: true }));
+        },
+        json: () => {
+          res.json(response);
+        }
+      });
+    }
+
+    function sendFailure (status, code, description) {
+      sendServiceResponse(status, {
+        authenticationFailure: {
+          '@code': code,
+          '#text': description
+        }
+      });
+    }
+
+    function sendError (err) {
+      const description = `Error ID ${uuid.v4()}`;
+      // log error
+      console.log(`${description}:`, err);
+
+      sendFailure(500, 'SERVER_ERROR', description);
+    }
+
     // perform OAuth2 code/token exchange with Auth0, using ticket as code
     request.post({
       url: `https://${config('AUTH0_DOMAIN')}/oauth/token`,
@@ -52,45 +95,29 @@ exports.validate = (config) =>
         redirect_uri: buildUrl(req, '/callback')
       }
     }, (err, response, body) => {
-      if (err) throw err;
+      if (err)
+        return sendError(err);
       if (response.statusCode != 200)
-        return res.status(400).send(`IDP returned a non-successful response: ${stringify(body)}`);
+        return sendFailure(400, 'INVALID_TICKET', stringify(body));
 
       // get secret used to validate the id_token
       auth0.getIdTokenSecret(config, req.service, body.id_token, (err, idTokenSecret) => {
-        if (err) throw err;
+        if (err)
+          return sendError(err);
 
         // validate the id_token and return its payload in CAS format
         jwt.verify(body.id_token, idTokenSecret, { audience: req.service.client_id }, (err, payload) => {
-          if (err) throw err;
+          if (err)
+            return sendError(err);
 
           // remove claims we don't want in the response
           delete payload.identities;
 
-          // build response
-          const response = {
-            serviceResponse: {
-              authenticationSuccess: {
-                user: payload[config('CAS_USERNAME_FIELD')],
-                attributes: payload
-              }
-            }
-          };
-
-          // send XML unless JSON was requested
-          res.format({
-            xml: () => {
-              const xml = xmlbuilder.create(response, {
-                stringify: {
-                  eleName: (name) => 'cas:' + name
-                }
-              });
-              xml.att('xmlns:cas', 'http://www.yale.edu/tp/cas');
-              
-              res.send(xml.end({ pretty: true }));
-            },
-            json: () => {
-              res.json(response);
+          // send success response
+          sendServiceResponse(200, {
+            authenticationSuccess: {
+              user: payload[config('CAS_USERNAME_FIELD')],
+              attributes: payload
             }
           });
         });
