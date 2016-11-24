@@ -50,7 +50,7 @@ Another implementation detail is that the CAS Server is completely stateless. To
 
   ```
   Application:
-  GET https://AUTH0_CAS_SERVER/p3/serviceValidate&service=SERVICE&ticket=4242xyz
+  GET https://AUTH0_CAS_SERVER/p3/serviceValidate?service=SERVICE&ticket=4242xyz
   ```
 
 6. Under the hood, the CAS Server calls the Auth0 `/oauth/token` endpoint to complete the OpenID Connection authorization code flow:  
@@ -130,6 +130,22 @@ http://localhost:3000/login?service=SERVICE
 where:
 * `SERVICE` is one of the CAS Service identifiers you configured in the [CAS Service Clients](#cas-service-clients) section.
 
+When the browser flow is complete you will be redirected back to your service's URL with a ticket query param:
+
+```
+SERVICE?ticket=TICKET
+```
+
+where:
+* `SERVICE` is the CAS Service identifier used to begin the flow
+* `TICKET` is the CAS ticket generated for the authentication transaction
+
+You can then call the validate endpoint to obtain the authenticated user profile:
+
+```sh
+curl "http://localhost:3000/p3/serviceValidate?service=SERVICE&ticket=TICKET"
+```
+
 ## Deploy as a Webtask
 
 ### Prerequisites
@@ -161,6 +177,8 @@ https://WEBTASK_CONTAINER_DOMAIN/cas_server/login?service=SERVICE
 where:
 * `WEBTASK_CONTAINER_DOMAIN` is the domain of your webtask container (which you see in the output of the `deploy` command above)
 * `SERVICE` is one of the CAS Service identifiers you configured in the [CAS Service Clients](#cas-service-clients) section.
+
+The remaining steps are identical to those in the [Local setup](#local-setup) except calls are made against the webtask host.
 
 ## Contributors
 
