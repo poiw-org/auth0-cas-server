@@ -40,7 +40,7 @@ exports.login = (config) =>
   };
 
 // CAS validate endpoint
-exports.validate = (config) =>
+exports.validate = (config, cache) =>
   (req, res) => {
     // response helper functions
     function sendServiceResponse (status, body) {
@@ -102,32 +102,39 @@ exports.validate = (config) =>
         return sendFailure(400, 'INVALID_TICKET', stringify(body));
 
       // get secret used to validate the id_token
-      auth0.getIdTokenSecret(config, req.service, body.id_token, (err, idTokenSecret) => {
+      auth0.getIdTokenSecret(config, req.service, body.id_token, cache, (err, idTokenSecret) => {
         if (err)
           return sendError(err);
 
         // validate the id_token and return its payload in CAS format
-        jwt.verify(body.id_token, idTokenSecret, { audience: req.service.client_id }, (err, payload) => {
-          if (err)
-            return sendError(err);
+        jwt.verify(
+          body.id_token,
+          idTokenSecret,
+          {
+            audience: req.service.client_id,
+            issuer: `https://${config('AUTH0_DOMAIN')}/`
+          },
+          (err, payload) => {
+            if (err)
+              return sendError(err);
 
-          // generate authenticationDate
-          payload.authenticationDate = moment.unix(payload.iat).utc().format();
+            // generate authenticationDate
+            payload.authenticationDate = moment.unix(payload.iat).utc().format();
 
-          // remove claims we don't want in the response
-          ['identities', 'iss', 'sub', 'aud', 'exp', 'iat']
-            .forEach(claim => {
-              delete payload[claim];
+            // remove claims we don't want in the response
+            ['identities', 'iss', 'sub', 'aud', 'exp', 'iat']
+              .forEach(claim => {
+                delete payload[claim];
+              });
+
+            // send success response
+            sendServiceResponse(200, {
+              authenticationSuccess: {
+                user: payload[config('CAS_USERNAME_FIELD')],
+                attributes: payload
+              }
             });
-
-          // send success response
-          sendServiceResponse(200, {
-            authenticationSuccess: {
-              user: payload[config('CAS_USERNAME_FIELD')],
-              attributes: payload
-            }
           });
-        });
       });
     });
   };

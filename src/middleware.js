@@ -15,9 +15,9 @@ exports.requireParams = (params) =>
 
 var services;
 // middleware that sets a req.service object (based on the 'service' query param) which contains Auth0 information about the CAS service
-exports.getService = (config) =>
+exports.getService = (config, cache) =>
   (req, res, next) => {
-    auth0.getCasServices(config, (err, services) => {
+    auth0.getCasServices(config, cache, (err, services) => {
       if (err)
         return next(err);
 
