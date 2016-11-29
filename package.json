@@ -1,6 +1,6 @@
 {
   "name": "auth0-cas-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A simple CAS server that uses Auth0 as the backing IDP",
   "main": "index.js",
   "scripts": {
