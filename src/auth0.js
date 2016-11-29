@@ -3,9 +3,8 @@ const stringify = require('node-stringify');
 const jwt = require('jsonwebtoken');
 const jwksClient = require('jwks-rsa');
 
-var services;
-
-exports.getCasServices = (config, done) => {
+exports.getCasServices = (config, cache, done) => {
+  var services = cache.get('cas_services');
   if (services)
     return done(null, services);
 
@@ -41,6 +40,7 @@ exports.getCasServices = (config, done) => {
         return done(new Error(`No clients representing CAS Services could be found in Auth0 tenant ${config('AUTH0_DOMAIN')}.`));
 
       services = {};
+      cache.set('cas_services', services);
       for (var i = 0; i < webApps.length; i++) {
         const webApp = webApps[i];
 
@@ -58,14 +58,22 @@ exports.getCasServices = (config, done) => {
   });
 };
 
-var idTokenSecrets = {}
+exports.getIdTokenSecret = (config, service, idToken, cache, done) => {
+  // make sure cache for secrets is initialized
+  var idTokenSecrets = cache.get('id_token_secrets');
+  if (!idTokenSecrets) {
+    idTokenSecrets = {};
+    cache.set('id_token_secrets', idTokenSecrets);
+  }
 
-exports.getIdTokenSecret = (config, service, idToken, done) => {
   // check to see if secret is already in cache
   if (idTokenSecrets[service.client_id])
     return done(null, idTokenSecrets[service.client_id]);
 
   const decoded = jwt.decode(idToken, { complete: true });
+  if (!decoded)
+    return done(new Error('Invalid JWT!'));
+
   switch (decoded.header.alg) {
     case 'HS256':
       console.log(`Caching id_token HS256 validation secret for client_id: ${service.client_id}`);
@@ -78,7 +86,7 @@ exports.getIdTokenSecret = (config, service, idToken, done) => {
       const client = jwksClient({ jwksUri: `https://${config('AUTH0_DOMAIN')}/.well-known/jwks.json` });
       return client.getSigningKey(decoded.header.kid, (err, key) => {
         if (err) return done(err);
-
+        
         idTokenSecrets[service.client_id] = key.publicKey || key.rsaPublicKey;
         return done(null, idTokenSecrets[service.client_id]);
       });
