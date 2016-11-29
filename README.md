@@ -120,7 +120,7 @@ CAS_USERNAME_FIELD=auth0-user-profile-field-like-email
 
 ### Run
 ```sh
-node index.js
+npm start
 ```
 
 ### Perform a login flow
