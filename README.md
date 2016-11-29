@@ -180,6 +180,12 @@ where:
 
 The remaining steps are identical to those in the [Local setup](#local-setup) except calls are made against the webtask host.
 
+## Run tests
+
+```sh
+npm test
+```
+
 ## Contributors
 
 Check them out [here](https://github.com/auth0-samples/auth0-cas-server/graphs/contributors)

@@ -6,7 +6,13 @@ const sessions = require('client-sessions');
 const middleware = require('./middleware');
 const cas = require('./cas');
 
-module.exports = (config) => {
+module.exports = (config, cache) => {
+  // default cache has non-expiring keys
+  cache = cache || {
+      get: function (key) { return this.key; },
+      set: function (key, value) { this.key = value; }
+    };
+
   const app = new Express();
 
   app.use(cookieParser());
@@ -25,13 +31,13 @@ module.exports = (config) => {
 
   app.get('/login',
     middleware.requireParams(['service']),
-    middleware.getService(config),
+    middleware.getService(config, cache),
     cas.login(config));
 
   app.get('/p3/serviceValidate',
     middleware.requireParams(['service', 'ticket']),
-    middleware.getService(config),
-    cas.validate(config));
+    middleware.getService(config, cache),
+    cas.validate(config, cache));
 
   // Auth0 callback
 

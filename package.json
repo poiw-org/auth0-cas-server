@@ -4,7 +4,8 @@
   "description": "A simple CAS server that uses Auth0 as the backing IDP",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -36,6 +37,13 @@
     "xmlbuilder": "^8.2.2"
   },
   "devDependencies": {
-    "auth0-extension-express-tools": "^0.9.0"
+    "auth0-extension-express-tools": "^0.9.0",
+    "chai": "^3.5.0",
+    "jsonwebtoken": "^7.1.9",
+    "mocha": "^3.1.2",
+    "nock": "^9.0.2",
+    "supertest": "^2.0.1",
+    "xmldom": "^0.1.22",
+    "xpath": "0.0.23"
   }
 }
