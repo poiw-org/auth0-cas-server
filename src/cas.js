@@ -1,4 +1,4 @@
-const uuid = require('node-uuid');
+const uuid = require('uuid');
 const querystring = require('querystring');
 const jwt = require('jsonwebtoken');
 const url = require('url');

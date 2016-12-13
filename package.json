@@ -7,6 +7,9 @@
     "start": "node index.js",
     "test": "mocha"
   },
+  "engines": {
+    "node": "4.4.5"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/auth0-samples/auth0-cas-server.git"
@@ -29,21 +32,21 @@
     "express": "^4.14.0",
     "jsonwebtoken": "^7.1.9",
     "jwks-rsa": "^1.1.1",
-    "moment": "^2.16.0",
+    "moment": "^2.17.0",
     "morgan": "^1.7.0",
-    "node-uuid": "^1.4.7",
+    "node-stringify": "0.0.19",
     "querystring": "^0.2.0",
-    "request": "^2.76.0",
+    "request": "^2.79.0",
+    "uuid": "^3.0.1",
     "xmlbuilder": "^8.2.2"
   },
   "devDependencies": {
-    "auth0-extension-express-tools": "^0.9.0",
+    "auth0-extension-express-tools": "^1.0.1",
     "chai": "^3.5.0",
-    "jsonwebtoken": "^7.1.9",
-    "mocha": "^3.1.2",
+    "mocha": "^3.2.0",
     "nock": "^9.0.2",
     "supertest": "^2.0.1",
-    "xmldom": "^0.1.22",
+    "xmldom": "^0.1.27",
     "xpath": "0.0.23"
   }
 }

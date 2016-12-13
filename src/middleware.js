@@ -4,7 +4,7 @@ const auth0 = require('./auth0');
 exports.requireParams = (params) =>
   (req, res, next) => {
     for (var i = 0; i < params.length; i++) {
-      const param = params[i];
+      var param = params[i];
 
       if (!req.query[param])
         return res.status(400).send(`Missing required parameter: ${param}`);

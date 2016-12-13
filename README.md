@@ -1,5 +1,7 @@
 # Auth0 CAS Server
 
+[![Build status](https://travis-ci.org/auth0-samples/auth0-cas-server.svg?branch=master)](https://travis-ci.org/auth0-samples/auth0-cas-server)
+
 A simple [CAS](https://en.m.wikipedia.org/wiki/Central_Authentication_Service) server that uses Auth0 as the backing IDP.
 
 ## Overview
@@ -118,7 +120,7 @@ CAS_USERNAME_FIELD=auth0-user-profile-field-like-email
 
 ### Run
 ```sh
-node index.js
+npm start
 ```
 
 ### Perform a login flow
