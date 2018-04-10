@@ -83,7 +83,7 @@ Another implementation detail is that the CAS Server is completely stateless. To
   </cas:serviceResponse>
   ```
 
-  > NOTE: The CAS Server can also return JSON if the `Accept: applicaiton/json` header is passed.
+  > NOTE: The CAS Server can also return JSON if the `Accept: application/json` header is passed.
 
 ## Auth0 Setup
 
