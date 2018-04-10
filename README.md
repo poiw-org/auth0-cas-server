@@ -12,7 +12,7 @@ This sample demonstrates a simple service written in Node.js that acts as a prot
 
 ## How it works
 
-This CAS server implementation takes advantage of the fact that both OpenID Connect and CAS are redirect-based protocols using the browser. Therefore applications don't know or care that the CAS server has redirected the user to a different website (Auth0) to perform the actual authentication. All that matters is that the CAS protocol itself is honored between the application and the CAS Server.
+This CAS server implementation takes advantage of the fact that both OpenID Connect and CAS are redirect-based protocols using the browser. Therefore, applications don't know or care that the CAS server has redirected the user to a different website (Auth0) to perform the actual authentication. All that matters is that the CAS protocol itself is honored between the application and the CAS Server.
 
 Another implementation detail is that the CAS Server is completely stateless. To manage browser session it uses an [encrypted cookie](https://github.com/mozilla/node-client-sessions). It also reuses the Auth0 `code` value as the CAS `ticket` so there's no need to temporarily store a user's profile. The CAS `ticket` is intended to be single-use, which works seamlessly with the Auth0 `code`, which is also single-use.
 
