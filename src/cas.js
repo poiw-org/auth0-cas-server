@@ -55,6 +55,9 @@ exports.validate = (config, cache) =>
         xml: () => {
           const xml = xmlbuilder.create(response, {
             stringify: {
+              // NOTE: xmlbuilder ver 11.x breaks this (https://github.com/oozcitak/xmlbuilder-js/blob/949e1e316fea05e428df4b2dcc2e36252418158e/CHANGELOG.md#1100---2019-02-18),
+              // 'eleName' (and 'attName') are both 'name',
+              // so don't upgrade until an alternative solution becomes available
               eleName: (name) => 'cas:' + name
             }
           });
