@@ -89,28 +89,28 @@ Another implementation detail is that the CAS Server is completely stateless. To
 
 ## Auth0 Setup
 
-### Non-Interactive Client
+### Machine-to-Machine Application
 
-Create a **Non Interactive Client** in Auth0 that the server can use to read client data. Configure the client so its authorized to call the **Auth0 Management API** with the following scopes:
+Create a **Machine-to-Machine Application** in Auth0 (eg. with the name `CAS Server`) that the server can use to read app data. Configure the app so its authorized to call the **Auth0 Management API** with the following scopes:
 
 * `read:clients`
 * `read:client_keys`
 
-Capture the Client ID and Client Secret of this client as it will be used in the next step (`API_V2_CLIENT_ID` and `API_V2_CLIENT_SECRET`).
+Capture the Client ID and Client Secret of this app as it will be used in the next step (`API_V2_CLIENT_ID` and `API_V2_CLIENT_SECRET`).
 
-### CAS Service Clients
+### CAS Service Applications
 
-Create one or more clients in Auth0 that will represent your CAS Services. To signify a client as a CAS Service, add the following **Application Metadata** item:
+Create one or more applications in Auth0 that will represent your CAS Services. To signify an application as a CAS Service, add the following **Application Metadata** item:
 
-* `cas_service`: The identifier of the CAS Service which is also the URL that the server will redirect to once authentication is complete.
+* `cas_service`: The identifier of the CAS Service which is also the URL that the server will redirect to once authentication is complete (eg. `https://example.com/cas`).
 
 ## Local setup
 
 ### Create an `.env` file:
 ```
 AUTH0_DOMAIN=your-tenant.auth0.com
-API_V2_CLIENT_ID=non-interactive-client-client_id
-API_V2_CLIENT_SECRET=non-interactive-client-client_secret
+API_V2_CLIENT_ID=m2m-app-client_id
+API_V2_CLIENT_SECRET=m2m-app-client_secret
 AUTH0_CONNECTION=connection-name
 AUTH0_SCOPES="openid profile"
 SECURE_COOKIE=false
@@ -123,6 +123,14 @@ CAS_USERNAME_FIELD=auth0-user-profile-field-like-email
 npm start
 ```
 
+### Configure the Callback URL of the CAS Service app
+
+Make sure the CAS Service app in your Auth0 tenant has the following URL configured in its **Allowed Callback URLs** field:
+
+```
+http://localhost:3000/callback
+```
+
 ### Perform a login flow
 
 ```
@@ -130,7 +138,7 @@ http://localhost:3000/login?service=SERVICE
 ```
 
 where:
-* `SERVICE` is one of the CAS Service identifiers you configured in the [CAS Service Clients](#cas-service-clients) section.
+* `SERVICE` is one of the CAS Service identifiers you configured in the [CAS Service Applications](#cas-service-application) section.
 
 When the browser flow is complete you will be redirected back to your service's URL with a ticket query param:
 
