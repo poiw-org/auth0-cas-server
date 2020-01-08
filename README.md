@@ -10,8 +10,6 @@ Presently Auth0 natively supports three authentication _protocols_ for your appl
 
 This sample demonstrates a simple service written in Node.js that acts as a protocol translator between CAS and Auth0 (using OpenID Connect). This allows an application that only knows how to interact with a CAS server to leverage all of the capabilities of Auth0 as an IDP (SSO, federation with other IDPs like social and enterprise, security, etc).
 
-And to make it really easy, the sample includes steps to deploy the service as a [Webtask](https://webtask.io)!
-
 ## How it works
 
 This CAS server implementation takes advantage of the fact that both OpenID Connect and CAS are redirect-based protocols using the browser. Therefore applications don't know or care that the CAS server has redirected the user to a different website (Auth0) to perform the actual authentication. All that matters is that the CAS protocol itself is honored between the application and the CAS Server.
@@ -155,40 +153,6 @@ You can then call the validate endpoint to obtain the authenticated user profile
 ```sh
 curl "http://localhost:3000/p3/serviceValidate?service=SERVICE&ticket=TICKET"
 ```
-
-## Deploy as a Webtask
-
-### Prerequisites
-
-Make sure you have the following command-line dependencies installed:
-* [Webtask CLI](https://github.com/auth0/wt-cli)  
-  > NOTE: Follow [these steps](https://manage.auth0.com/#/account/webtasks) to set up a webtask profile that will deploy the webtask to your Auth0 tenant's container
-* [Webtask Bundler](https://github.com/auth0/webtask-bundle)
-
-Capture your webtask profile that you set up above:
-```sh
-WT_PROFILE=your-wt-profile
-```
-
-Finally make sure you've created the `.env` file described in the [Local setup](#local-setup) section as the script below will use it to configure secrets in the webtask.
-
-### Deploy
-
-```sh
-./deploy $WT_PROFILE
-```
-
-### Perform a login flow
-
-```
-https://WEBTASK_CONTAINER_DOMAIN/cas_server/login?service=SERVICE
-```
-
-where:
-* `WEBTASK_CONTAINER_DOMAIN` is the domain of your webtask container (which you see in the output of the `deploy` command above)
-* `SERVICE` is one of the CAS Service identifiers you configured in the [CAS Service Clients](#cas-service-clients) section.
-
-The remaining steps are identical to those in the [Local setup](#local-setup) except calls are made against the webtask host.
 
 ## Run tests
 
