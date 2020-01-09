@@ -10,8 +10,6 @@ Presently Auth0 natively supports three authentication _protocols_ for your appl
 
 This sample demonstrates a simple service written in Node.js that acts as a protocol translator between CAS and Auth0 (using OpenID Connect). This allows an application that only knows how to interact with a CAS server to leverage all of the capabilities of Auth0 as an IDP (SSO, federation with other IDPs like social and enterprise, security, etc).
 
-And to make it really easy, the sample includes steps to deploy the service as a [Webtask](https://webtask.io)!
-
 ## How it works
 
 This CAS server implementation takes advantage of the fact that both OpenID Connect and CAS are redirect-based protocols using the browser. Therefore applications don't know or care that the CAS server has redirected the user to a different website (Auth0) to perform the actual authentication. All that matters is that the CAS protocol itself is honored between the application and the CAS Server.
@@ -89,28 +87,28 @@ Another implementation detail is that the CAS Server is completely stateless. To
 
 ## Auth0 Setup
 
-### Non-Interactive Client
+### Machine-to-Machine Application
 
-Create a **Non Interactive Client** in Auth0 that the server can use to read client data. Configure the client so its authorized to call the **Auth0 Management API** with the following scopes:
+Create a **Machine-to-Machine Application** in Auth0 (eg. with the name `CAS Server`) that the server can use to read app data. Configure the app so its authorized to call the **Auth0 Management API** with the following scopes:
 
 * `read:clients`
 * `read:client_keys`
 
-Capture the Client ID and Client Secret of this client as it will be used in the next step (`API_V2_CLIENT_ID` and `API_V2_CLIENT_SECRET`).
+Capture the Client ID and Client Secret of this app as it will be used in the next step (`API_V2_CLIENT_ID` and `API_V2_CLIENT_SECRET`).
 
-### CAS Service Clients
+### CAS Service Applications
 
-Create one or more clients in Auth0 that will represent your CAS Services. To signify a client as a CAS Service, add the following **Application Metadata** item:
+Create one or more applications in Auth0 that will represent your CAS Services. To signify an application as a CAS Service, add the following **Application Metadata** item:
 
-* `cas_service`: The identifier of the CAS Service which is also the URL that the server will redirect to once authentication is complete.
+* `cas_service`: The identifier of the CAS Service which is also the URL that the server will redirect to once authentication is complete (eg. `https://example.com/cas`).
 
 ## Local setup
 
 ### Create an `.env` file:
 ```
 AUTH0_DOMAIN=your-tenant.auth0.com
-API_V2_CLIENT_ID=non-interactive-client-client_id
-API_V2_CLIENT_SECRET=non-interactive-client-client_secret
+API_V2_CLIENT_ID=m2m-app-client_id
+API_V2_CLIENT_SECRET=m2m-app-client_secret
 AUTH0_CONNECTION=connection-name
 AUTH0_SCOPES="openid profile"
 SECURE_COOKIE=false
@@ -123,6 +121,14 @@ CAS_USERNAME_FIELD=auth0-user-profile-field-like-email
 npm start
 ```
 
+### Configure the Callback URL of the CAS Service app
+
+Make sure the CAS Service app in your Auth0 tenant has the following URL configured in its **Allowed Callback URLs** field:
+
+```
+http://localhost:3000/callback
+```
+
 ### Perform a login flow
 
 ```
@@ -130,7 +136,7 @@ http://localhost:3000/login?service=SERVICE
 ```
 
 where:
-* `SERVICE` is one of the CAS Service identifiers you configured in the [CAS Service Clients](#cas-service-clients) section.
+* `SERVICE` is one of the CAS Service identifiers you configured in the [CAS Service Applications](#cas-service-application) section.
 
 When the browser flow is complete you will be redirected back to your service's URL with a ticket query param:
 
@@ -147,40 +153,6 @@ You can then call the validate endpoint to obtain the authenticated user profile
 ```sh
 curl "http://localhost:3000/p3/serviceValidate?service=SERVICE&ticket=TICKET"
 ```
-
-## Deploy as a Webtask
-
-### Prerequisites
-
-Make sure you have the following command-line dependencies installed:
-* [Webtask CLI](https://github.com/auth0/wt-cli)  
-  > NOTE: Follow [these steps](https://manage.auth0.com/#/account/webtasks) to set up a webtask profile that will deploy the webtask to your Auth0 tenant's container
-* [Webtask Bundler](https://github.com/auth0/webtask-bundle)
-
-Capture your webtask profile that you set up above:
-```sh
-WT_PROFILE=your-wt-profile
-```
-
-Finally make sure you've created the `.env` file described in the [Local setup](#local-setup) section as the script below will use it to configure secrets in the webtask.
-
-### Deploy
-
-```sh
-./deploy $WT_PROFILE
-```
-
-### Perform a login flow
-
-```
-https://WEBTASK_CONTAINER_DOMAIN/cas_server/login?service=SERVICE
-```
-
-where:
-* `WEBTASK_CONTAINER_DOMAIN` is the domain of your webtask container (which you see in the output of the `deploy` command above)
-* `SERVICE` is one of the CAS Service identifiers you configured in the [CAS Service Clients](#cas-service-clients) section.
-
-The remaining steps are identical to those in the [Local setup](#local-setup) except calls are made against the webtask host.
 
 ## Run tests
 

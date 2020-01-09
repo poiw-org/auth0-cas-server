@@ -21,13 +21,15 @@ exports.getCasServices = (config, cache, done) => {
     if (err) return done(err);
 
     var accessToken = body.access_token;
+    if (!accessToken) 
+      return done(new Error(`Error obtaining access token: ${stringify(body)}`));
     console.log('API v2 access token obtained.')
 
     // fetch clients from Auth0 that are configured as CAS services
     request.get({
       url: `https://${config('AUTH0_DOMAIN')}/api/v2/clients`,
       json: true,
-      headers: { Authorization: `Bearer ${accessToken}` }
+      auth: { bearer: accessToken }
     }, (err, response, clients) => {
       if (err) return done(err);
       if (response.statusCode !== 200)
