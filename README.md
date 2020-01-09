@@ -12,20 +12,20 @@ This sample demonstrates a simple service written in Node.js that acts as a prot
 
 ## How it works
 
-This CAS server implementation takes advantage of the fact that both OpenID Connect and CAS are redirect-based protocols using the browser. Therefore applications don't know or care that the CAS server has redirected the user to a different website (Auth0) to perform the actual authentication. All that matters is that the CAS protocol itself is honored between the application and the CAS Server.
+This CAS server implementation takes advantage of the fact that both OpenID Connect and CAS are redirect-based protocols using the browser. Therefore, applications don't know or care that the CAS server has redirected the user to a different website (Auth0) to perform the actual authentication. All that matters is that the CAS protocol itself is honored between the application and the CAS Server.
 
 Another implementation detail is that the CAS Server is completely stateless. To manage browser session it uses an [encrypted cookie](https://github.com/mozilla/node-client-sessions). It also reuses the Auth0 `code` value as the CAS `ticket` so there's no need to temporarily store a user's profile. The CAS `ticket` is intended to be single-use, which works seamlessly with the Auth0 `code`, which is also single-use.
 
 ## Flow
 
-1. An application (aka CAS service) determines that the user needs to authenticate (eg. it detects there is no local session), so it redirects the browser to the CAS [Login endpoint](https://apereo.github.io/cas/4.2.x/protocol/CAS-Protocol-Specification.html#login-as-credential-requestor), passing the `service` parameter, which identifies the application:  
+1. An application (aka CAS service) determines that the user needs to authenticate (e.g., it detects there is no local session), so it redirects the browser to the CAS [Login endpoint](https://apereo.github.io/cas/4.2.x/protocol/CAS-Protocol-Specification.html#login-as-credential-requestor), passing the `service` parameter, which identifies the application:  
 
   ```
   Application redirect ->
   https://AUTH0_CAS_SERVER/login?service=SERVICE
   ```
 
-2. The CAS Server verifies that the `SERVICE` identifier points to a [registered CAS service](#cas-service-clients). If so, it performs an OpenID Connect authorization code flow with Auth0, redireting to the `/authorize` endpoint:  
+2. The CAS Server verifies that the `SERVICE` identifier points to a [registered CAS service](#cas-service-clients). If so, it performs an OpenID Connect authorization code flow with Auth0, redirecting to the `/authorize` endpoint:  
 
   ```
   CAS Server redirect ->
@@ -83,13 +83,13 @@ Another implementation detail is that the CAS Server is completely stateless. To
   </cas:serviceResponse>
   ```
 
-  > NOTE: The CAS Server can also return JSON if the `Accept: applicaiton/json` header is passed.
+  > NOTE: The CAS Server can also return JSON if the `Accept: application/json` header is passed.
 
 ## Auth0 Setup
 
 ### Machine-to-Machine Application
 
-Create a **Machine-to-Machine Application** in Auth0 (eg. with the name `CAS Server`) that the server can use to read app data. Configure the app so its authorized to call the **Auth0 Management API** with the following scopes:
+Create a **Machine-to-Machine Application** in Auth0 (eg. with the name `CAS Server`) that the server can use to read app data. Configure the app so it's authorized to call the **Auth0 Management API** with the following scopes:
 
 * `read:clients`
 * `read:client_keys`
@@ -162,7 +162,7 @@ npm test
 
 ## Contributors
 
-Check them out [here](https://github.com/auth0-samples/auth0-cas-server/graphs/contributors)
+Check them out [here](https://github.com/auth0-samples/auth0-cas-server/graphs/contributors).
 
 ## Issue Reporting
 
