@@ -34,7 +34,7 @@ module.exports = (config, cache) => {
     middleware.getService(config, cache),
     cas.login(config));
 
-  app.get('/logout', (req,res)=>res.redirect(`https://${config["AUTH0_DOMAIN"]}/v2/logout`));
+  app.get('/logout', (req,res)=>res.redirect(`https://${config("AUTH0_DOMAIN")}/v2/logout`));
 
 
   app.get('/p3/serviceValidate',
@@ -49,10 +49,10 @@ module.exports = (config, cache) => {
     (req, res) => {
       // validate session
       if (req.session.state !== req.query.state)
-        return res.status(400).send(`Invalid session`);
+        return res.status(400).send(`Το αίτημα σύνδεσης έληξε. Παρακαλώ προσπαθήστε να συνδεθείτε ξανά από την εφαρμογή που θέλετε να χρησιμοποιήσετε.`);
 
       // redirect to service, using Auth0 authorization code as CAS ticket
-      res.redirect(`${req.session.serviceUrl}?ticket=${req.query.code}`);
+      res.redirect(`${req.session.serviceUrl.replace(":80",":443")}?ticket=${req.query.code}`);
     });
 
   return app;

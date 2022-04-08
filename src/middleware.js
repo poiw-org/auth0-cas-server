@@ -20,8 +20,9 @@ exports.getService = (config, cache) =>
     auth0.getCasServices(config, cache, (err, services) => {
       if (err)
         return next(err);
-
-      req.service = services[req.query.service];
+      req.query.service = req.query.service.replace(":80",":443");
+      let serviceDomain = (req.query.service.replace("http://","").replace("https://","").split("/"))[0]
+      req.service = services[serviceDomain];
       if (!req.service)
         return res.status(400).send(`Unrecognized service: ${req.query.service}`);
 
