@@ -34,6 +34,9 @@ module.exports = (config, cache) => {
     middleware.getService(config, cache),
     cas.login(config));
 
+  app.get('/logout', (req,res)=>res.redirect(`https://${config["AUTH0_DOMAIN"]}/v2/logout`));
+
+
   app.get('/p3/serviceValidate',
     middleware.requireParams(['service', 'ticket']),
     middleware.getService(config, cache),

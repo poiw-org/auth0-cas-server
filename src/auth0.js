@@ -34,7 +34,6 @@ exports.getCasServices = (config, cache, done) => {
       if (err) return done(err);
       if (response.statusCode !== 200)
         return done(new Error(`Could not fetch Auth0 clients. status=${response.statusCode}, body=` + stringify(clients)));
-
       const webApps = clients
         .filter(c => c.app_type === 'regular_web' && c.client_metadata && c.client_metadata.cas_service);
 
